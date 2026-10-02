@@ -24,11 +24,30 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Mark single alert as read
-router.patch('/:alertId/read', requireAuth, async (req, res) => {
+// Mark all alerts as read
+const handleMarkAllRead = async (req, res) => {
   try {
+    await Alert.updateMany({ isRead: false }, { isRead: true });
+    res.json({ message: 'All alerts marked as read', unreadCount: 0 });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to mark all alerts as read' });
+  }
+};
+router.patch('/mark-all-read', handleMarkAllRead);
+router.post('/mark-all-read', handleMarkAllRead);
+
+// Mark single alert as read
+const handleMarkSingleRead = async (req, res) => {
+  try {
+    const alertIdParam = req.params.alertId;
+    const query = {
+      $or: [
+        { alertId: alertIdParam },
+        ...(alertIdParam.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: alertIdParam }] : [])
+      ]
+    };
     const alert = await Alert.findOneAndUpdate(
-      { alertId: req.params.alertId },
+      query,
       { isRead: true },
       { new: true }
     );
@@ -39,7 +58,9 @@ router.patch('/:alertId/read', requireAuth, async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: 'Failed to update alert' });
   }
-});
+};
+router.patch('/:alertId/read', handleMarkSingleRead);
+router.post('/:alertId/read', handleMarkSingleRead);
 
 // Create / Raise Alert Issue
 router.post('/', requireAuth, async (req, res) => {
