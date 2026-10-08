@@ -109,7 +109,7 @@ async function testRoleAccess(roleName, demoHeader) {
     console.log(`  [PATCH /api/auth/users/:id/role]: Status ${roleChangeRes.status} -> ${roleChangeRes.status === 403 ? '🔒 Denied (Expected 403 Forbidden)' : '❌ Unexpected: ' + roleChangeRes.status}`);
   }
 
-  // 6. Register New Vessel - ONLY Admin allowed
+  // 6. Register New Vessel - Admin, Ship Manager, Port Manager allowed
   const randNum = Math.floor(1000000 + Math.random() * 9000000);
   const newShipRes = await makeRequest({
     hostname: 'localhost',
@@ -118,8 +118,8 @@ async function testRoleAccess(roleName, demoHeader) {
     method: 'POST',
     headers
   }, { name: `Test Carrier ${randNum}`, imoNumber: `IMO ${randNum}`, capacityTEU: 15000 });
-  if (roleName === 'admin') {
-    console.log(`  [POST /api/ships]: Status ${newShipRes.status} -> ${newShipRes.status === 201 ? '✅ Allowed for Admin' : '❌ Status ' + newShipRes.status}`);
+  if (['admin', 'ship_manager', 'port_manager'].includes(roleName)) {
+    console.log(`  [POST /api/ships]: Status ${newShipRes.status} -> ${newShipRes.status === 201 ? '✅ Allowed for ' + roleName : '❌ Status ' + newShipRes.status}`);
   } else {
     console.log(`  [POST /api/ships]: Status ${newShipRes.status} -> ${newShipRes.status === 403 ? '🔒 Denied (Expected 403 Forbidden)' : '❌ Unexpected: ' + newShipRes.status}`);
   }
